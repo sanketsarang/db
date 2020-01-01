@@ -59,6 +59,11 @@ public class LicenseRules {
     public static boolean ALLOW_LIST_DS = true; // if true will allow list-ds operation to work. Set to false for cloud.
     public static boolean BYPASS_ROOT_ONLY = false; //if true will prevent root user login. Set to true for cloud.
 
+    /* Clustering prameters */
+    public static String SELF_NODE_ID = "";
+    public static String CLUSTER_ID = null;
+    public static String OPERATING_MODE = "single";
+
     /**
      * For enterprise edition
      */

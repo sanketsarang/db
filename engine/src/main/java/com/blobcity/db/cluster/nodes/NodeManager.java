@@ -16,12 +16,13 @@
 
 package com.blobcity.db.cluster.nodes;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.bsql.BSqlDataManager;
 import com.blobcity.db.cluster.connection.ConnectionManager;
+import com.blobcity.db.cluster.ops.ClusterManager;
 import com.blobcity.db.config.ConfigBean;
 import com.blobcity.db.config.ConfigProperties;
+import com.blobcity.db.config.DbConfigBean;
 import com.blobcity.db.constants.BSql;
-import com.blobcity.db.constants.License;
 import com.blobcity.db.exceptions.ErrorCode;
 import com.blobcity.db.exceptions.OperationException;
 import com.blobcity.util.json.JsonUtil;
@@ -29,6 +30,7 @@ import com.google.common.base.Preconditions;
 import java.io.File;
 import java.util.UUID;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,11 +47,15 @@ public class NodeManager {
     @Autowired
     private ConfigBean configBean;
     @Autowired
+    private DbConfigBean dbConfigBean;
+    @Autowired
     private ClusterNodesStore clusterNodesStore;
     @Autowired
     private ProximityNodesStore proximityNodesStore;
     @Autowired
     private ConnectionManager connectionManager;
+    @Autowired
+    private BSqlDataManager dataManager;
 
     public void notifiyConnection(String nodeId) {
         logger.info("Node connected: {}", nodeId);
@@ -79,8 +85,19 @@ public class NodeManager {
         Preconditions.checkNotNull(nodeId, new OperationException(ErrorCode.ADD_NODE_ERROR, "node-id cannot be null"));
         Preconditions.checkNotNull(ip, new OperationException(ErrorCode.ADD_NODE_ERROR, "ip address cannot be null"));
 
+        final String operatingMode = dbConfigBean.getConfig("OPERATING_MODE");
+        if(operatingMode.equalsIgnoreCase("single")) {
+            throw new OperationException(ErrorCode.NOT_A_CLUSTER);
+        }
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("nodeId", nodeId);
+        jsonObject.put("ip", ip);
+        jsonObject.put("port", 8084);
+        jsonObject.put("status", "connecting");
+
         JSONArray jsonArray = (JSONArray) configBean.getProperty(ConfigProperties.CLUSTER_NODES);
-        if (JsonUtil.contains(jsonArray, nodeId)) {
+        if (jsonArray != null && JsonUtil.contains(jsonArray, nodeId)) {
             throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is already a member of the cluster");
         }
 
@@ -103,6 +120,9 @@ public class NodeManager {
             //TODO: Broadcast node addition so that all nodes can add the new node into the cluster
             clusterNodesStore.notifyAddNode(nodeId);
             connectionManager.connect(nodeId, ip);
+
+            //TODO: Start node sync up process for adding a new node into the cluster
+
         } catch (InterruptedException ex) {
             logger.error("Could not update configuration file with newly added cluster node with node-id: " + nodeId, ex);
             throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not update configuration post add-node "
@@ -117,6 +137,57 @@ public class NodeManager {
             }
         }
     }
+
+//    public void addNode(final String nodeId, final String ip) throws OperationException {
+//        Preconditions.checkNotNull(nodeId, new OperationException(ErrorCode.ADD_NODE_ERROR, "node-id cannot be null"));
+//        Preconditions.checkNotNull(ip, new OperationException(ErrorCode.ADD_NODE_ERROR, "ip address cannot be null"));
+//
+//        final String operatingMode = dbConfigBean.getConfig("OPERATING_MODE");
+//        if(operatingMode.equalsIgnoreCase("single")) {
+//            throw new OperationException(ErrorCode.NOT_A_CLUSTER);
+//        }
+//
+//        JSONArray jsonArray = (JSONArray) configBean.getProperty(ConfigProperties.CLUSTER_NODES);
+//        if (jsonArray != null && JsonUtil.contains(jsonArray, nodeId)) {
+//            throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is already a member of the cluster");
+//        }
+//
+//        /* Validate to check if connection to the respective node is possible */
+//        if (!connectionManager.validateConnection(nodeId, ip)) {
+//            throw new OperationException(ErrorCode.CLUSTER_ADD_NODE_VALIDATION_FAILED);
+//        }
+//
+//        try {
+//            configBean.acquireExclusiveAccess();
+//            if (jsonArray == null) {
+//                jsonArray = new JSONArray();
+//            }
+//            jsonArray.put(nodeId);
+//
+//            //TODO: Change to adding into a table inside the system_db database
+//            configBean.setProperty(ConfigProperties.CLUSTER_NODES, jsonArray);
+//            configBean.updateConfig();
+//
+//            //TODO: Broadcast node addition so that all nodes can add the new node into the cluster
+//            clusterNodesStore.notifyAddNode(nodeId);
+//            connectionManager.connect(nodeId, ip);
+//
+//            //TODO: Start node sync up process for adding a new node into the cluster
+//
+//        } catch (InterruptedException ex) {
+//            logger.error("Could not update configuration file with newly added cluster node with node-id: " + nodeId, ex);
+//            throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not update configuration post add-node "
+//                    + "operation for newly added node with node-id: " + nodeId + ". Operation is rolled back");
+//        } finally {
+//            try {
+//                configBean.releaseExclusiveAccess();
+//            } catch (InterruptedException ex) {
+//                logger.error("Error releasing exclusive lock on configuration change. Cluster may require manual reboot", ex);
+//                throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not release exclusive lock acquired on "
+//                        + "configuration file for performing add-node operation for adding node with node-id: " + nodeId);
+//            }
+//        }
+//    }
 
     public void addNode(final String nodeId, final String ip, final String port) throws OperationException {
         //TODO: Implement add node operation over a custom port

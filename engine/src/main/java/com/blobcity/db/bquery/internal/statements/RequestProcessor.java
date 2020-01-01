@@ -16,8 +16,7 @@
 
 package com.blobcity.db.bquery.internal.statements;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
-import com.blobcity.db.master.MasterExecutable;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.master.MasterStore;
 import com.blobcity.db.cluster.messaging.ClusterMessaging;
 import com.blobcity.db.cluster.messaging.messages.JsonQueryMessage;

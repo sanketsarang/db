@@ -16,9 +16,8 @@
 
 package com.blobcity.db.master;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.cluster.messaging.ClusterMessaging;
-import com.blobcity.db.cluster.nodes.ProximityNodesStore;
 import com.blobcity.db.exceptions.ErrorCode;
 import com.blobcity.db.license.LicenseRules;
 import com.blobcity.db.master.aggregators.Aggregator;

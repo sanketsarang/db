@@ -16,7 +16,7 @@
 
 package com.blobcity.db.requests;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.cluster.messaging.ClusterMessaging;
 import com.blobcity.db.exceptions.ErrorCode;
 import com.blobcity.db.exceptions.OperationException;

@@ -16,7 +16,7 @@
 
 package com.blobcity.db.master.executors.schema;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.master.MasterExecutable;
 import com.blobcity.db.master.aggregators.UniqueAggregator;
 import com.blobcity.db.master.executors.generic.ExecuteSelectedNodesReadMaster;

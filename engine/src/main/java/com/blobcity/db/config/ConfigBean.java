@@ -29,10 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 //import com.blobcity.license.License;
@@ -170,6 +167,7 @@ public class ConfigBean {
             configMap.put(ConfigProperties.VERSION, storageVersion);
 //            configMap.put(ConfigProperties.NODE_ID, LicenseManager.getServerId());
             configMap.put(ConfigProperties.NODE_ID, UUID.randomUUID().toString());
+            configMap.put(ConfigProperties.CLUSTER_NODES, new ArrayList<>());
         } catch (UnknownHostException ex) {
             logger.warn("Automatic configuration could not detect broadcast address for clustering. This will have to be configured manaully for clustering to be enabled.");
         }

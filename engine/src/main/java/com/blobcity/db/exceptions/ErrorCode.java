@@ -130,7 +130,9 @@ public enum ErrorCode {
     TABLEAU_EXCEPTION("TABLEAU_EXCEPTION", "Internal error with Tableau integration"),
     GROUP_BY("GROUP_BY", "Error executing GROUP BY clause"),
     EXCEL_DATA_READ_ERR("EXCEL_DATA_READ_ERR", "Error reading data in Excel format"),
-    INVALID_CONFIG_KEY("INVALID_CONFIG_KEY", "No configuration setting found with specified key");
+    INVALID_CONFIG_KEY("INVALID_CONFIG_KEY", "No configuration setting found with specified key"),
+    ALREADY_A_CLUSTER("ALREADY_A_CLUSTER", "Node is already a cluster, cannot run create-cluster operation on an existing cluster"),
+    NOT_A_CLUSTER("NOT_A_CLUSTER", "The node is not a cluster. Use create-cluster first or check that the query is executed on the correct node");
     
     private final String errorCode;
     private final String errorMessage;

@@ -17,7 +17,7 @@
 package com.blobcity.db.master.executors.data;
 
 import com.blobcity.db.bsql.BSqlCollectionManager;
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.exceptions.ErrorCode;
 import com.blobcity.db.exceptions.OperationException;
 import com.blobcity.db.master.MasterExecutable;

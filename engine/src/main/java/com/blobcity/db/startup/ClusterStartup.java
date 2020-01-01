@@ -16,13 +16,21 @@
 
 package com.blobcity.db.startup;
 
+import com.blobcity.db.bsql.BSqlDataManager;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.config.ConfigBean;
 import com.blobcity.db.config.ConfigProperties;
+import com.blobcity.db.config.DbConfigBean;
+import com.blobcity.db.exceptions.OperationException;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.validation.constraintvalidation.SupportedValidationTarget;
+import java.util.List;
 
 /**
  * Attempts connecting to all nodes that are listed in the cluster table of this node.
@@ -36,16 +44,17 @@ public class ClusterStartup {
     
     @Autowired
     private ConfigBean configBean;
-    
+
     public void startup() {
+        System.out.println("Starting cluster service");
         logger.info("Starting cluster service");
-        
+
         JSONArray jsonArray = (JSONArray)configBean.getProperty(ConfigProperties.CLUSTER_NODES);
         if(jsonArray == null || jsonArray.length() == 0) {
             logger.info("This node is not part of a cluster. Service started in standalone mode.");
             return;
         }
-        
+
         logger.info("Connecting to nodes " + jsonArray.toString());
         
         //TODO: Start connection service for connecting to the missing cluster nodes

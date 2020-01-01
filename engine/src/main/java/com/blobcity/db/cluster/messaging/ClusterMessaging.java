@@ -16,7 +16,7 @@
 
 package com.blobcity.db.cluster.messaging;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.cluster.connection.ClusterConnection;
 import com.blobcity.db.cluster.connection.ConnectionStore;
 import com.blobcity.db.exceptions.OperationException;

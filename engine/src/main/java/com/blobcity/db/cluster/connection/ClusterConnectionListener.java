@@ -16,9 +16,16 @@
 
 package com.blobcity.db.cluster.connection;
 
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.constants.Ports;
+
+import java.io.IOException;
 import java.net.Socket;
 import javax.annotation.PostConstruct;
+import com.blobcity.db.exceptions.OperationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,12 +35,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClusterConnectionListener extends ConnectionEndpoint {
 
+    private static final Logger logger = LoggerFactory.getLogger(ClusterConnectionListener.class);
+
+    @Autowired
+    private ClusterNodesStore clusterNodesStore;
+    @Autowired
+    private ConnectionManager connectionManager;
+    @Autowired
+    private ConnectionStore connectionStore;
+
     public ClusterConnectionListener() {
         super(Ports.CLUSTER_PORT);
     }
 
     @PostConstruct
     private void init() {
+
+        System.out.println("Cluster connection listener will now start");
 
         /* Starts a thread that listens to incoming TCP connections for inter node connection on cluster */
         start();
@@ -42,5 +60,29 @@ public class ClusterConnectionListener extends ConnectionEndpoint {
     @Override
     protected void processNewClient(Socket socket) {
         //TODO: Start a new ClusterConnection and add it to the ClusterStore
+
+        System.out.println("New Socket connection received");
+
+        String remoteNodeId;
+
+        /**
+         * Simply add a connection, this operation does not necessary add the node into the cluster for the node to
+         * receive clustered queries. `add-node` operation ect are performed after the connection is added into the
+         * pool. Most of the times, this method will be called to simply increase the connection pool size of existing
+         * cluster nodes, or in reopening a connection after a network failure.
+         */
+
+        try {
+            remoteNodeId = connectionManager.newIncomingConnection(socket);
+            connectionStore.addConnection(remoteNodeId, new ClusterConnection(socket, clusterNodesStore.getSelfId(), remoteNodeId));
+        } catch(OperationException ex) {
+            ex.printStackTrace();
+            logger.error("Error exchanging connection header with incoming node. The connection will be terminated");
+            try {
+                socket.close();
+            } catch (IOException ex1) {
+                logger.error(ex1.getMessage(), ex1);
+            }
+        }
     }
 }

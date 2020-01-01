@@ -14,18 +14,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.blobcity.db.cluster;
+package com.blobcity.db.cluster.nodes;
 
+import com.blobcity.db.bsql.BSqlDataManager;
 import com.blobcity.db.config.ConfigBean;
 import com.blobcity.db.config.ConfigProperties;
+import com.blobcity.db.config.DbConfigBean;
 import com.blobcity.db.exceptions.OperationException;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 
 //import com.blobcity.license.License;
+import com.blobcity.db.license.LicenseRules;
 import org.apache.mina.util.ConcurrentHashSet;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +45,19 @@ import org.springframework.stereotype.Component;
 public class ClusterNodesStore {
 
     public static String selfId = null;
+    private String clusterId =  null;
     private Set<String> clusterNodes = new ConcurrentHashSet<>();
     private Set<String> onlineNodes = new ConcurrentHashSet<>();
+    private Map<String, NodeStatus> statusMap = new ConcurrentHashMap<>();
     private static ClusterNodesStore clusterBeanInstance;
     private static final Logger logger = LoggerFactory.getLogger(ClusterNodesStore.class.getName());
 
     @Autowired
     private ConfigBean configBean;
+    @Autowired
+    private DbConfigBean dbConfigBean;
+    @Autowired
+    private BSqlDataManager dataManager;
 
     @PostConstruct
     private void init() {
@@ -63,6 +74,30 @@ public class ClusterNodesStore {
         return selfId;
     }
 
+    public void setClusterId(final String clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public String getClusterId() {
+        return this.clusterId;
+    }
+
+    public NodeStatus getNodeStatus(final String nodeId) {
+        return statusMap.get(nodeId);
+    }
+
+    public void setNodeStatus(final String nodeId, final NodeStatus nodeStatus) {
+        statusMap.put(nodeId, nodeStatus);
+    }
+
+    /**
+     * Call this to initiate connection with a node that was already part of the cluster. Typically called on system
+     * boot, to reestablish connectivity with other cluster nodes
+     */
+    public void connectToNode(final String nodeId, final String ip, final String port) {
+        //need to figure this out
+    }
+
     /**
      * Notifies the store of a new node addition to the cluster, and adds the node-id of the newly added node to the
      * cached list of connected nodes. This function is a no-op if the node-id is already cached in the store.
@@ -71,6 +106,7 @@ public class ClusterNodesStore {
      */
     public void notifyAddNode(final String nodeId) {
         clusterNodes.add(nodeId);
+        statusMap.put(nodeId, NodeStatus.UNKNOWN);
     }
 
     /**
@@ -81,6 +117,7 @@ public class ClusterNodesStore {
      */
     public void notifyRemoveNode(final String nodeId) {
         clusterNodes.remove(nodeId);
+        statusMap.remove(nodeId);
     }
 
     public boolean hasNode(String nodeId) throws OperationException {
@@ -117,6 +154,45 @@ public class ClusterNodesStore {
         throw new UnsupportedOperationException("not supported yet.");
     }
 
+//    private void loadClusterNodes() {
+//        List<JSONObject> nodes = Collections.emptyList();
+//        try {
+//            nodes = dataManager.selectAll(".systemdb", "nodes");
+//        } catch(OperationException ex) {
+//            logger.error("Unable to read internal nodes table. Defaulting to single node operation. If this node was part" +
+//                    "of a cluster, it must be shutdown immediately to prevent data corruption");
+//        }
+//
+//        if(nodes.isEmpty()) {
+//            logger.warn("Could not find cluster configuration. Defaulting to single node mode. If this node is expected to "
+//                    + "be part of a cluster, you must shut down the node immediately to prevent data corruption and "
+//                    + "list the cluster configuration inside config.json property file before booting.");
+//        }
+//
+//        nodes.forEach(node -> {
+//            System.out.println("Found node: " + node.toString());
+//        });
+//
+//        try {
+//            dbConfigBean.loadAllConfigs();
+//            if (LicenseRules.SELF_NODE_ID.isEmpty())
+//                dbConfigBean.setConfig("SELF_NODE_ID", UUID.randomUUID().toString());
+//        } catch(OperationException ex) {
+//            logger.error("Error assigning SELF_NODE_ID  to new node. Clustering will fail", ex);
+//            LicenseRules.SELF_NODE_ID = "default";
+//        }
+//
+//        String selfNodeId = LicenseRules.SELF_NODE_ID;
+//        if (selfNodeId == null) {
+//            logger.warn("Self node id is not configured. Cluster may not function correctly");
+//        } else {
+//            clusterNodes.add(selfNodeId);
+//            this.selfId = selfNodeId;
+//        }
+//
+//        System.out.println("SELF_NODE_ID=" + selfNodeId);
+//    }
+
     private void loadClusterNodes() {
         Object obj = configBean.getProperty(ConfigProperties.CLUSTER_NODES);
         if (obj == null) {
@@ -133,13 +209,28 @@ public class ClusterNodesStore {
 
 //        String selfNodeId = configBean.getStringProperty(ConfigProperties.NODE_ID);
 //        String selfNodeId = License.getNodeId();
-        String selfNodeId = "default"; //temp code until removal of licensing module
 
+        /* Assign a new node id if one is not already saved inside the DbConfig table */
+
+        try {
+            dbConfigBean.loadAllConfigs();
+            if (LicenseRules.SELF_NODE_ID.isEmpty())
+                dbConfigBean.setConfig("SELF_NODE_ID", UUID.randomUUID().toString());
+        } catch(OperationException ex) {
+            logger.error("Error assigning SELF_NODE_ID to new node. Clustering will fail", ex);
+            LicenseRules.SELF_NODE_ID = "default";
+        }
+
+
+
+        String selfNodeId = LicenseRules.SELF_NODE_ID;
         if (selfNodeId == null) {
             logger.warn("Self node id is not configured. Cluster may not function correctly");
         } else {
             clusterNodes.add(selfNodeId);
             this.selfId = selfNodeId;
         }
+
+        System.out.println("SELF_NODE_ID=" + selfNodeId);
     }
 }

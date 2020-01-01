@@ -23,6 +23,8 @@ import com.blobcity.db.billing.SelectActivityLog;
 import com.blobcity.db.bquery.*;
 import com.blobcity.db.bsql.*;
 import com.blobcity.db.cache.QueryResultCache;
+import com.blobcity.db.cluster.connection.ClusterConnectionListener;
+import com.blobcity.db.cluster.ops.ClusterManager;
 import com.blobcity.db.code.*;
 import com.blobcity.db.code.webservices.WebServiceExecutorBean;
 import com.blobcity.db.config.DbConfigBean;
@@ -55,7 +57,7 @@ import com.blobcity.db.storage.BSqlMemoryManagerOld;
 import com.blobcity.db.cache.CacheRules;
 import com.blobcity.db.cache.DataCache;
 import com.blobcity.db.cli.statements.DDLStatement;
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.cluster.connection.ConnectionManager;
 import com.blobcity.db.cluster.connection.ConnectionStore;
 import com.blobcity.db.master.MasterStore;
@@ -140,10 +142,7 @@ import com.tableausoftware.beans.TableauSiteManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import com.tableausoftware.beans.TableauSiteManagerBean;
 import com.tableausoftware.beans.TableauConfigBean;
@@ -326,11 +325,6 @@ public class EngineBeanConfig {
         return new ProximityNodesStore();
     }
 
-    @Bean
-    @Lazy
-    public ClusterNodesStore clusterNodesStore() { // singleton bean
-        return new ClusterNodesStore();
-    }
 
     @Bean
     @Lazy
@@ -343,6 +337,14 @@ public class EngineBeanConfig {
     public SystemDBService systemDBService() { //singleton bean
         return new SystemDBService();
     }
+
+    @Bean
+    @Lazy
+//    @DependsOn("StorageStartup")
+    public ClusterNodesStore clusterNodesStore() { // singleton bean
+        return new ClusterNodesStore();
+    }
+
 
     @Bean(name = "SecurityManagerBean")
     @Lazy
@@ -525,6 +527,11 @@ public class EngineBeanConfig {
     @Lazy
     public ExportProcedureStore exportProcedureStore() {
         return new ExportProcedureStore();
+    }
+
+    @Bean //must not be lazy, else cluster connection listener will not start on system boot
+    public ClusterConnectionListener clusterConnectionListener() {
+        return new ClusterConnectionListener();
     }
 
     /*
@@ -881,6 +888,12 @@ public class EngineBeanConfig {
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     public OnDiskWhereHandling onDiskWhereHandling(){
         return new OnDiskWhereHandling();
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public ClusterManager clusterManager(){
+        return new ClusterManager();
     }
 
     /*

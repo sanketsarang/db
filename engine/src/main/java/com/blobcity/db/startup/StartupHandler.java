@@ -63,6 +63,8 @@ public class StartupHandler {
     private VersionUpgradeFactory versionUpgradeFactory;
     @Autowired
     private HomeReportingBean homeReportingBean;
+    @Autowired
+    private ClusterStartup clusterStartup;
     
     /* For Singleton initialization purpose on startup */
     @Autowired
@@ -111,6 +113,9 @@ public class StartupHandler {
                 break;
             case RUNNING:
                 logger.debug("Old DB status was running. Starting with recovery");
+
+                /* Start cluster services */
+                clusterStartup.startup();
 
                 //TODO: Execute any uncompleted tasks that need to be completed before a startup
                 writeStatus(RUNNING);

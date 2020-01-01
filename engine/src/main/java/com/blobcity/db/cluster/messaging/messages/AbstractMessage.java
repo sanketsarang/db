@@ -74,8 +74,10 @@ public abstract class AbstractMessage implements Message {
     @Override
     public void init(String jsonString) throws OperationException {
         try {
+            System.out.println("Receiving message: " + jsonString);
             init(new JSONObject(jsonString));
         } catch (JSONException ex) {
+            ex.printStackTrace();
             throw new OperationException(ErrorCode.CLUSTER_MESSAGE_FORMAT_ERROR);
         }
     }

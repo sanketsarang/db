@@ -16,10 +16,11 @@
 
 package com.blobcity.db.cluster.connection;
 
-import com.blobcity.db.cluster.ClusterNodesStore;
+import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.cluster.messaging.messages.Message;
 import com.blobcity.db.cluster.messaging.messages.NodeConnectionHeaderMessage;
 import com.blobcity.db.constants.ClusterConstants;
+import com.blobcity.db.exceptions.ErrorCode;
 import com.blobcity.db.exceptions.OperationException;
 import com.blobcity.db.startup.StorageStartup;
 import java.io.BufferedReader;
@@ -88,6 +89,7 @@ public class ConnectionManager {
                     return false;
                 }
             } catch (IOException ex) {
+                ex.printStackTrace();
                 logger.error("Error reading connect-node command on connection to ip " + ipAddress + " on port "
                         + ClusterConstants.CLUSTER_PORT + ". The connection will now be closed.");
                 return false;
@@ -175,6 +177,40 @@ public class ConnectionManager {
         logger.info("Cluster connection successfully opened to ip " + ipAddress + " on port " + ClusterConstants.CLUSTER_PORT);
     }
 
+    public String newIncomingConnection(Socket socket) throws OperationException {
+        String remoteNodeId;
+
+        try {
+            remoteNodeId = readConnectionHeader(socket);
+        } catch (IOException ex) {
+            logger.error("Error reading connection header from new incoming node. The connection will now be closed.");
+            try {
+                socket.close();
+            } catch (IOException ex1) {
+                logger.error(ex1.getMessage(), ex1);
+            }
+
+            throw new OperationException(ErrorCode.INTERNAL_OPERATION_ERROR, "Error reading connection header from new incoming node. The connection will now be closed.");
+        }
+
+        System.out.println("Message read from node: " + remoteNodeId);
+
+        try {
+            writeConnectionHeader(socket, clusterNodesStore.getSelfId());
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.error("Error writing connection header to incoming node. The connection will now be closed.");
+            try {
+                socket.close();
+            } catch (IOException ex1) {
+                logger.error(ex1.getMessage(), ex1);
+            }
+            throw new OperationException(ErrorCode.INTERNAL_OPERATION_ERROR, "Error writing connection header to incoming node. The connection will now be closed.");
+        }
+
+        return remoteNodeId;
+    }
+
     /**
      * Opens a new socket connection on the specified IP address on the specified port. This function is a blocking call
      * until the connection is established.
@@ -201,11 +237,12 @@ public class ConnectionManager {
      */
     private void writeConnectionHeader(final Socket socket, final String selfNodeId) throws IOException {
         Message message = new NodeConnectionHeaderMessage(selfNodeId);
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            writer.write(message.toString());
-            writer.newLine();
-            writer.flush();
-        }
+        ((NodeConnectionHeaderMessage) message).setSenderNodeId(selfNodeId);
+        ((NodeConnectionHeaderMessage) message).setMasterNodeId(selfNodeId);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        writer.write(message.toString());
+        writer.newLine();
+        writer.flush();
     }
 
     /**
@@ -217,11 +254,10 @@ public class ConnectionManager {
      * @throws OperationException if message parsing failed
      */
     private String readConnectionHeader(final Socket socket) throws IOException, OperationException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            String message = reader.readLine();
-            NodeConnectionHeaderMessage nodeConnectionHeaderMessage = new NodeConnectionHeaderMessage();
-            nodeConnectionHeaderMessage.init(message);
-            return nodeConnectionHeaderMessage.getNodeId();
-        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String message = reader.readLine();
+        NodeConnectionHeaderMessage nodeConnectionHeaderMessage = new NodeConnectionHeaderMessage();
+        nodeConnectionHeaderMessage.init(message);
+        return nodeConnectionHeaderMessage.getNodeId();
     }
 }

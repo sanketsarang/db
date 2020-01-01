@@ -22,6 +22,7 @@ import com.blobcity.db.bsql.BSqlDatastoreManager;
 import com.blobcity.db.bsql.BSqlIndexManager;
 import com.blobcity.db.cli.statements.DDLStatement;
 import com.blobcity.db.cluster.nodes.NodeManager;
+import com.blobcity.db.cluster.ops.ClusterManager;
 import com.blobcity.db.code.CodeExecutor;
 import com.blobcity.db.code.CodeLoader;
 import com.blobcity.db.config.ConfigBean;
@@ -89,6 +90,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.tensorflow.Operation;
 
 /**
  * Processes commands fired from the CLI for operating on the database. Supported command formats can be found at
@@ -159,6 +161,8 @@ public class ConsoleExecutorBean implements ConsoleExecutor {
     private DbConfigBean dbConfigBean;
     @Autowired @Lazy
     private IndexCleanupBean indexCleanupBean;
+    @Autowired @Lazy
+    private ClusterManager clusterManager;
 
     @Override
     public String insertData(final String user, final String ds, final String collection, final String dataType, final String data) {
@@ -217,6 +221,9 @@ public class ConsoleExecutorBean implements ConsoleExecutor {
         try {
             switch (elements[0].toLowerCase()) {
             /* node-related commands */
+                case "create-cluster":
+                    response = createCluster(elements);
+                    break;
                 case "add-node":
                     response = addNode(elements);
                     break;
@@ -598,6 +605,11 @@ public class ConsoleExecutorBean implements ConsoleExecutor {
         collectionManager.addColumn(database, table, columnName, fieldType, autoDefineType, indexType);
 
         return "Column successfully added";
+    }
+
+    private String createCluster(String []elements) throws OperationException {
+        clusterManager.createCluster();
+        return "Node converted from standalone to cluster mode";
     }
 
     private String addNode(String[] elements) throws OperationException {

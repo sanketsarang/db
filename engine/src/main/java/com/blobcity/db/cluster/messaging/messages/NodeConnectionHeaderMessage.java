@@ -19,6 +19,8 @@ package com.blobcity.db.cluster.messaging.messages;
 import com.blobcity.db.exceptions.OperationException;
 import org.json.JSONObject;
 
+import java.util.UUID;
+
 /**
  * This object represents the first header message that is passed when a node opens a connection with any other node.
  * The message allows the destination node to identify the node that is opening the connection.
@@ -35,16 +37,21 @@ public class NodeConnectionHeaderMessage extends AbstractMessage implements Mess
     public NodeConnectionHeaderMessage() {
         this.nodeId = null;
         this.ip = null;
+        setRequestId(UUID.randomUUID().toString());
     }
 
     public NodeConnectionHeaderMessage(final String nodeId) {
         this.nodeId = nodeId;
         this.ip = null;
+        setRequestId(UUID.randomUUID().toString());
+        setTargetNodeId(nodeId);
     }
     
     public NodeConnectionHeaderMessage(final String nodeId, final String ip) {
         this.nodeId = nodeId;
         this.ip = ip;
+        setRequestId(UUID.randomUUID().toString());
+        setTargetNodeId(nodeId);
     }
 
     @Override
@@ -52,10 +59,10 @@ public class NodeConnectionHeaderMessage extends AbstractMessage implements Mess
         superInit(jsonObject);
         JSONObject payloadJson = jsonObject.getJSONObject("p");
         if (payloadJson.has("node-id")) {
-            this.nodeId = jsonObject.getString("node-id");
+            this.nodeId = payloadJson.getString("node-id");
         }
         if (payloadJson.has("ip")) {
-            this.ip = jsonObject.getString("ip");
+            this.ip = payloadJson.getString("ip");
         }
     }
 

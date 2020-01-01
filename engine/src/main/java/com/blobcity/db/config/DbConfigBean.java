@@ -90,6 +90,12 @@ public class DbConfigBean {
                 return "" + LicenseRules.QPS;
             case "QPS_BLOBCITY_SYNC":
                 return "" + LicenseRules.QPS_BLOBCITY_SYNC;
+            case "SELF_NODE_ID":
+                return LicenseRules.SELF_NODE_ID;
+            case "CLUSTER_ID":
+                return LicenseRules.CLUSTER_ID;
+            case "OPERATING_MODE":
+                return LicenseRules.OPERATING_MODE;
         }
 
         return null;
@@ -153,6 +159,15 @@ public class DbConfigBean {
                 break;
             case "QPS_BLOBCITY_SYNC":
                 LicenseRules.QPS_BLOBCITY_SYNC = Boolean.parseBoolean(value);
+                break;
+            case "SELF_NODE_ID":
+                LicenseRules.SELF_NODE_ID = value;
+                break;
+            case "CLUSTER_ID":
+                LicenseRules.CLUSTER_ID = value;
+                break;
+            case "OPERATING_MODE":
+                LicenseRules.OPERATING_MODE = value;
                 break;
             default:
                 throw new OperationException(ErrorCode.INVALID_CONFIG_KEY);
