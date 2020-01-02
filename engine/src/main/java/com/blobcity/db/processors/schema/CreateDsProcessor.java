@@ -35,6 +35,7 @@ public class CreateDsProcessor extends AbstractCommitProcessor implements Proces
 
     @Override
     public void softCommit() {
+        System.out.println("Soft committing CREATE-DS");
         Query responseQuery;
         CentralCommitLogWriter commitLogWriter = super.getBean(CentralCommitLogWriter.class);
 
@@ -50,6 +51,7 @@ public class CreateDsProcessor extends AbstractCommitProcessor implements Proces
                     datastoreManager.createDatastore(ds);
                     setRollbackNeedsAction();
                     responseQuery = new Query().requestId(query.getRequestId()).softCommitSuccessQuery().ack("1");
+                    System.out.println("Create DS is a success");
                     super.getClusterMessagingBean().sendMessage(responseQuery, query.getMasterNodeId());
                     commitLogWriter.write(responseQuery);
                 } catch (OperationException ex) {
@@ -67,6 +69,8 @@ public class CreateDsProcessor extends AbstractCommitProcessor implements Proces
                 }
             }
         }
+
+        System.out.println("Failure has occurred");
 
         //TODO: Appropriately write action to commit logs
         responseQuery = new Query().requestId(query.getRequestId()).softCommitSuccessQuery().ack("0");

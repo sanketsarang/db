@@ -36,9 +36,17 @@ public abstract class TcpConnectionClient extends Thread {
     private static Logger logger = LoggerFactory.getLogger(TcpConnectionClient.class.getName());
 
     private Socket socket;
+    private BufferedReader reader = null;
+    private BufferedWriter writer = null;
 
     public TcpConnectionClient(Socket socket) {
         this.socket = socket;
+    }
+
+    public TcpConnectionClient(Socket socket, BufferedReader reader, BufferedWriter writer) {
+        this.socket = socket;
+        this.reader = reader;
+        this.writer = writer;
     }
 
     /**
@@ -47,14 +55,18 @@ public abstract class TcpConnectionClient extends Thread {
      */
     @Override
     public void run() {
-        BufferedReader reader = null;
         String message;
         try {
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            if(reader == null) {
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            }
 
-            while ((message = reader.readLine()) != null) {
+            System.out.println("Starting infinite read loop");
+            while((message = reader.readLine()) != null) {
+                if(message.equalsIgnoreCase("KILL")) break;
                 processMessage(message);
             }
+            System.out.println("Connection is closed");
         } catch (Exception ex) {
             logger.error("Dropped socket connection", ex);
             //LoggerFactory.getLogger(TcpConnectionClient.class.getName()).log(Level.SEVERE, null, ex);
@@ -83,11 +95,13 @@ public abstract class TcpConnectionClient extends Thread {
      * @throws IOException
      */
     protected void writeMessage(String message) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-            writer.write(message);
-            writer.newLine();
-            writer.flush();
+        if(writer == null) {
+            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         }
+
+        writer.write(message);
+        writer.newLine();
+        writer.flush();
     }
 
     /**

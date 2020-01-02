@@ -74,7 +74,10 @@ public class ClusterConnectionListener extends ConnectionEndpoint {
 
         try {
             remoteNodeId = connectionManager.newIncomingConnection(socket);
-            connectionStore.addConnection(remoteNodeId, new ClusterConnection(socket, clusterNodesStore.getSelfId(), remoteNodeId));
+            ClusterConnection clusterConnection = new ClusterConnection(socket, clusterNodesStore.getSelfId(), remoteNodeId);
+            connectionStore.addConnection(remoteNodeId, clusterConnection);
+            clusterConnection.start(); //start the connection listener. All new messages will be listened to and processed by the ProcessHandler
+            System.out.println("Started connection with " + remoteNodeId);
         } catch(OperationException ex) {
             ex.printStackTrace();
             logger.error("Error exchanging connection header with incoming node. The connection will be terminated");

@@ -34,9 +34,11 @@ public class ProcessorExecutorService {
 
     private ProcessorExecutorService() {
         executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        System.out.println("Staring process executor service with " + Runtime.getRuntime().availableProcessors() + " threads");
     }
 
     public void submit(ProcessHandler processHandler) {
-        executorService.submit(processHandler);
+        executorService.execute(processHandler);
+        System.out.println("Process execution job submitted");
     }
 }

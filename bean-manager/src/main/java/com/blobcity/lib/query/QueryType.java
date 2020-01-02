@@ -117,6 +117,65 @@ public enum QueryType {
     LIST_NODES("LIST-NODES"),
     DROP_NODE("DROP-NODE"),
 
+    /**
+     * First message sent to a new node, from the cluster. Mentions the network topology of the cluster
+     */
+    ONB1("ONB1"),
+    /**
+     * Receives acknowledgement from node that cluster topology is received
+     */
+    ONB1_ACK("ONB1_ACK"),
+
+    /**
+     * Second step, send schema of all datastores and collections within each datastore. The node will replicate this
+     * schema structure locally
+     */
+    ONB2("ONB2"),
+    /**
+     * New node confirms success / failure of replicating the schema structure
+     */
+    ONB2_ACK("ONB2_ACK"),
+
+    /**
+     * SYSTEMDB data sync. User and SpJars table only
+     */
+    ONB3("ONB3"),
+    /**
+     * New node to confirm sync of SYSTEMDB
+     */
+    ONB3_ACK("ONB3_ACK"),
+
+    /**
+     * Sync stored procedure jars to the new node, so that that stored procedures can be loaded onto the new node
+     */
+    ONB4("ONB4"),
+    /**
+     * New node to confirm back with receiving jars and loading them
+     */
+    ONB4_ACK("ONB4_ACK"),
+
+    /**
+     * Inform other nodes to add this node and verify a connection with the node
+     */
+    ONB5_1("ONB5_1"),
+
+    /**
+     * Inform new node of the complete current active node list, and ask it to confirm back when it receives a connection
+     * from each of the nodes
+     */
+    ONB5_2("ONB5_2"),
+
+    ONB5_1_ACK("ONB5_1_ACK"),
+    ONB5_2_ACK("ONB5_2_ACK"),
+
+    /**
+     * Broadcast to all nodes that node onboarding was successful. No response necessary. The node will change status
+     * to CONNECTED if it receives the message, and will remain in SYNCING state if does not receive the message.
+     * A SYNCING state is auto converted to DOWN state if no action post ONB5_2 for 30 seconds
+     */
+    ONB_SUCCESS("ONB_SUCCESS"),
+
+
     // INTERNAL QUERIES
     ROLLBACK("R"),
     COMMIT("C"), //this is a confirmation to commit the soft commit

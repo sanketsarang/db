@@ -28,6 +28,9 @@ import com.blobcity.db.exceptions.OperationException;
 import com.blobcity.util.json.JsonUtil;
 import com.google.common.base.Preconditions;
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -82,60 +85,7 @@ public class NodeManager {
     }
 
     public void addNode(final String nodeId, final String ip) throws OperationException {
-        Preconditions.checkNotNull(nodeId, new OperationException(ErrorCode.ADD_NODE_ERROR, "node-id cannot be null"));
-        Preconditions.checkNotNull(ip, new OperationException(ErrorCode.ADD_NODE_ERROR, "ip address cannot be null"));
-
-        final String operatingMode = dbConfigBean.getConfig("OPERATING_MODE");
-        if(operatingMode.equalsIgnoreCase("single")) {
-            throw new OperationException(ErrorCode.NOT_A_CLUSTER);
-        }
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("nodeId", nodeId);
-        jsonObject.put("ip", ip);
-        jsonObject.put("port", 8084);
-        jsonObject.put("status", "connecting");
-
-        JSONArray jsonArray = (JSONArray) configBean.getProperty(ConfigProperties.CLUSTER_NODES);
-        if (jsonArray != null && JsonUtil.contains(jsonArray, nodeId)) {
-            throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is already a member of the cluster");
-        }
-
-        /* Validate to check if connection to the respective node is possible */
-        if (!connectionManager.validateConnection(nodeId, ip)) {
-            throw new OperationException(ErrorCode.CLUSTER_ADD_NODE_VALIDATION_FAILED);
-        }
-
-        try {
-            configBean.acquireExclusiveAccess();
-            if (jsonArray == null) {
-                jsonArray = new JSONArray();
-            }
-            jsonArray.put(nodeId);
-
-            //TODO: Change to adding into a table inside the system_db database
-            configBean.setProperty(ConfigProperties.CLUSTER_NODES, jsonArray);
-            configBean.updateConfig();
-
-            //TODO: Broadcast node addition so that all nodes can add the new node into the cluster
-            clusterNodesStore.notifyAddNode(nodeId);
-            connectionManager.connect(nodeId, ip);
-
-            //TODO: Start node sync up process for adding a new node into the cluster
-
-        } catch (InterruptedException ex) {
-            logger.error("Could not update configuration file with newly added cluster node with node-id: " + nodeId, ex);
-            throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not update configuration post add-node "
-                    + "operation for newly added node with node-id: " + nodeId + ". Operation is rolled back");
-        } finally {
-            try {
-                configBean.releaseExclusiveAccess();
-            } catch (InterruptedException ex) {
-                logger.error("Error releasing exclusive lock on configuration change. Cluster may require manual reboot", ex);
-                throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not release exclusive lock acquired on "
-                        + "configuration file for performing add-node operation for adding node with node-id: " + nodeId);
-            }
-        }
+        addNode(nodeId, ip, 8084);
     }
 
 //    public void addNode(final String nodeId, final String ip) throws OperationException {
@@ -189,8 +139,68 @@ public class NodeManager {
 //        }
 //    }
 
-    public void addNode(final String nodeId, final String ip, final String port) throws OperationException {
-        //TODO: Implement add node operation over a custom port
+    public void addNode(final String nodeId, final String ip, final int port) throws OperationException {
+        Preconditions.checkNotNull(nodeId, new OperationException(ErrorCode.ADD_NODE_ERROR, "node-id cannot be null"));
+        Preconditions.checkNotNull(ip, new OperationException(ErrorCode.ADD_NODE_ERROR, "ip address cannot be null"));
+
+        final String operatingMode = dbConfigBean.getConfig("OPERATING_MODE");
+        if(operatingMode.equalsIgnoreCase("single")) {
+            throw new OperationException(ErrorCode.NOT_A_CLUSTER);
+        }
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("nodeId", nodeId);
+        jsonObject.put("ip", ip);
+        jsonObject.put("port", port);
+        jsonObject.put("status", "connecting");
+
+        JSONArray jsonArray = (JSONArray) configBean.getProperty(ConfigProperties.CLUSTER_NODES);
+        if(jsonArray != null) {
+            Optional<Object> optional = jsonArray.toList().stream().filter(item -> ((HashMap<String, Object>) item).get("nodeId").toString().equalsIgnoreCase(nodeId)).findAny();
+            if (optional.isPresent()) {
+                throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is already a member of the cluster");
+            }
+        }
+
+//        if (jsonArray != null && JsonUtil.contains(jsonArray, nodeId)) {
+//            throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is already a member of the cluster");
+//        }
+
+        /* Validate to check if connection to the respective node is possible */
+        if (!connectionManager.validateConnection(nodeId, ip)) {
+            throw new OperationException(ErrorCode.CLUSTER_ADD_NODE_VALIDATION_FAILED);
+        }
+
+        try {
+            configBean.acquireExclusiveAccess();
+            if (jsonArray == null) {
+                jsonArray = new JSONArray();
+            }
+            jsonArray.put(jsonObject);
+
+            //TODO: Change to adding into a table inside the system_db database
+            configBean.setProperty(ConfigProperties.CLUSTER_NODES, jsonArray);
+            configBean.updateConfig();
+
+            //TODO: Broadcast node addition so that all nodes can add the new node into the cluster
+            clusterNodesStore.notifyAddNode(nodeId);
+            connectionManager.connect(nodeId, ip);
+
+            //TODO: Start node sync up process for adding a new node into the cluster
+
+        } catch (InterruptedException ex) {
+            logger.error("Could not update configuration file with newly added cluster node with node-id: " + nodeId, ex);
+            throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not update configuration post add-node "
+                    + "operation for newly added node with node-id: " + nodeId + ". Operation is rolled back");
+        } finally {
+            try {
+                configBean.releaseExclusiveAccess();
+            } catch (InterruptedException ex) {
+                logger.error("Error releasing exclusive lock on configuration change. Cluster may require manual reboot", ex);
+                throw new OperationException(ErrorCode.CONFIG_FILE_ERROR, "Could not release exclusive lock acquired on "
+                        + "configuration file for performing add-node operation for adding node with node-id: " + nodeId);
+            }
+        }
     }
 
     public void removeNode(final String nodeId, final boolean graceful) throws OperationException {
@@ -206,7 +216,9 @@ public class NodeManager {
                     + "nodes registry. The configuration may be corrupted and requires a manual restore.");
         }
 
-        if (!JsonUtil.contains(jsonArray, nodeId)) {
+        Optional<Object> optional = jsonArray.toList().stream().filter(item -> ((HashMap<String, Object>) item).get("nodeId").toString().equalsIgnoreCase(nodeId)).findAny();
+
+        if (!optional.isPresent()) {
             throw new OperationException(ErrorCode.ADD_NODE_ERROR, nodeId + " is not a member of the cluster");
         }
 
@@ -215,7 +227,7 @@ public class NodeManager {
 
             configBean.acquireExclusiveAccess();
             for (int i = 0; i < jsonArray.length(); i++) {
-                if (jsonArray.getString(i).equals(nodeId)) {
+                if (jsonArray.getJSONObject(i).getString("nodeId").equals(nodeId)) {
                     jsonArray.remove(i);
                     break;
                 }

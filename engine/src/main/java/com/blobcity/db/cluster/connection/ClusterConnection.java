@@ -99,6 +99,7 @@ public class ClusterConnection extends TcpConnectionClient {
     @Override
     protected void processMessage(String message) {
 
+        System.out.println("ClusterConnection process message: " + message);
         ProcessHandler processHandler = new ProcessHandler(remoteNodeId, new Query(new JSONObject(message)));
         ProcessorExecutorService.getInstance().submit(processHandler);
 

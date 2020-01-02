@@ -129,6 +129,32 @@ public class ProcessHandler implements Runnable {
                 processor.softCommit();
                 return;
 
+            case ONB1:
+                return;
+            case ONB1_ACK:
+                return;
+            case ONB2:
+                return;
+            case ONB2_ACK:
+                return;
+            case ONB3:
+                return;
+            case ONB3_ACK:
+                return;
+            case ONB4:
+                return;
+            case ONB4_ACK:
+                return;
+            case ONB5_1:
+                return;
+            case ONB5_2:
+                return;
+            case ONB5_1_ACK:
+                return;
+            case ONB5_2_ACK:
+                return;
+            case ONB_SUCCESS:
+                return;
         }
     }
 

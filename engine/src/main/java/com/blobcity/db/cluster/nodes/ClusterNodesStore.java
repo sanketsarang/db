@@ -202,8 +202,9 @@ public class ClusterNodesStore {
         } else {
             JSONArray jsonArray = (JSONArray) configBean.getProperty(ConfigProperties.CLUSTER_NODES);
             clusterNodes.clear();
+            System.out.println("From file: " + jsonArray.toString());
             for (int i = 0; i < jsonArray.length(); i++) {
-                clusterNodes.add(jsonArray.getString(i));
+                clusterNodes.add(jsonArray.getJSONObject(i).getString("nodeId"));
             }
         }
 
@@ -220,8 +221,6 @@ public class ClusterNodesStore {
             logger.error("Error assigning SELF_NODE_ID to new node. Clustering will fail", ex);
             LicenseRules.SELF_NODE_ID = "default";
         }
-
-
 
         String selfNodeId = LicenseRules.SELF_NODE_ID;
         if (selfNodeId == null) {

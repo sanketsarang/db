@@ -17,6 +17,7 @@
 package com.blobcity.db.startup;
 
 import com.blobcity.db.bsql.BSqlDataManager;
+import com.blobcity.db.cluster.connection.ConnectionManager;
 import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.config.ConfigBean;
 import com.blobcity.db.config.ConfigProperties;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.validation.constraintvalidation.SupportedValidationTarget;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -44,6 +46,8 @@ public class ClusterStartup {
     
     @Autowired
     private ConfigBean configBean;
+    @Autowired
+    private ConnectionManager connectionManager;
 
     public void startup() {
         System.out.println("Starting cluster service");
@@ -56,6 +60,20 @@ public class ClusterStartup {
         }
 
         logger.info("Connecting to nodes " + jsonArray.toString());
+
+        for(int i =0; i < jsonArray.length(); i++) {
+            JSONObject json = jsonArray.getJSONObject(i);
+            final String nodeId = json.get("nodeId").toString();
+            final String ip = json.get("ip").toString();
+            final String port = json.get("port").toString();
+
+            System.out.println("Need to connect to: " + nodeId + " " + ip + " " + port);
+            try {
+                connectionManager.connect(nodeId, ip);
+            } catch (OperationException e) {
+                logger.error("Failed to establish connection with node " + nodeId  + ". Node status is changed to DOWN", e);
+            }
+        }
         
         //TODO: Start connection service for connecting to the missing cluster nodes
     }

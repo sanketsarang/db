@@ -21,7 +21,7 @@ public class ClusterManager {
      * Should be used to convert a single node into a clustered operating mode. This is used when forming a new cluster
      * and used on the first node in the cluster. All new nodes must add into this node.
      */
-    public void createCluster() throws OperationException {
+    public String createCluster() throws OperationException {
         if(clusterNodesStore.getClusterId() != null) {
             throw new OperationException(ErrorCode.ALREADY_A_CLUSTER);
         }
@@ -29,13 +29,14 @@ public class ClusterManager {
         dbConfigBean.setConfig("OPERATING_MODE", "cluster");
         dbConfigBean.setConfig("CLUSTER_ID", clusterId);
         clusterNodesStore.setClusterId(clusterId);
+        return clusterId;
     }
 
     /**
      * Will convert single node to operate in a non clustered manner. However if this operation is run on an existing
      * cluster, all nodes will be made to operate in a standalone mode
      */
-    public void dropCluster() {
+    public void dropCluster()  {
         //TODO: Implement this
     }
 }

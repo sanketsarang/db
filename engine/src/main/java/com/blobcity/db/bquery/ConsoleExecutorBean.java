@@ -608,14 +608,14 @@ public class ConsoleExecutorBean implements ConsoleExecutor {
     }
 
     private String createCluster(String []elements) throws OperationException {
-        clusterManager.createCluster();
-        return "Node converted from standalone to cluster mode";
+        final String clusterId = clusterManager.createCluster();
+        return "Successfully created new cluster, ID: " + clusterId;
     }
 
     private String addNode(String[] elements) throws OperationException {
         final String nodeId;
         final String ipAddress;
-        final String port;
+        final int port;
 
         switch (elements.length) {
             /* add-node <node-id> */
@@ -632,8 +632,8 @@ public class ConsoleExecutorBean implements ConsoleExecutor {
             case 4:
                 nodeId = elements[1];
                 ipAddress = elements[2];
-                port = elements[3];
-                nodeManager.addNode(nodeId, ipAddress);
+                port = Integer.parseInt(elements[3]);
+                nodeManager.addNode(nodeId, ipAddress, port);
                 return "Node " + nodeId + "," + ipAddress + " successfully added";
             default:
                 throw new OperationException(ErrorCode.INVALID_QUERY_FORMAT, "Format for add-node command is> add-node <node-id> <ip-address>");
