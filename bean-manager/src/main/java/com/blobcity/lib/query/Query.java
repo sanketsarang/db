@@ -85,7 +85,12 @@ public class Query {
     }
 
     public QueryType getQueryType() {
-        return QueryType.fromString(queryJson.getString(QueryParams.QUERY.getParam()));
+//        return QueryType.fromString(queryJson.getString(QueryParams.QUERY.getParam()));
+        if(!queryJson.has(QueryParams.QUERY.getParam())) {
+            return QueryType.fromString(queryJson.getJSONObject(QueryParams.PAYLOAD.getParam()).getString(QueryParams.QUERY.getParam()));
+        } else {
+            return QueryType.fromString(queryJson.getString(QueryParams.QUERY.getParam()));
+        }
     }
 
     public String getUser() {

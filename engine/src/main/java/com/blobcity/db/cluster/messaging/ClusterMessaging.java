@@ -87,9 +87,11 @@ public class ClusterMessaging {
 
         ClusterConnection clusterConnection = connectionStore.getConnection(nodeId);
         if (clusterConnection == null) {
+            System.out.println("Could not find connection, will fail");
             return false;
         }
         try {
+            System.out.println("Found connection, will actually send the message");
             clusterConnection.sendMessage(query.getRequestId(), query.getQueryType().getQueryCode(), query.toJson());
             return true;
         } catch (OperationException ex) {

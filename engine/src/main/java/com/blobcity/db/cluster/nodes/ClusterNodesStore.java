@@ -51,6 +51,7 @@ public class ClusterNodesStore {
     private Map<String, NodeStatus> statusMap = new ConcurrentHashMap<>();
     private static ClusterNodesStore clusterBeanInstance;
     private static final Logger logger = LoggerFactory.getLogger(ClusterNodesStore.class.getName());
+    private static Random random = new Random();
 
     @Autowired
     private ConfigBean configBean;
@@ -143,6 +144,12 @@ public class ClusterNodesStore {
     public Set<String> getLeastLoadedNodes(int replicationFactor) {
         if(replicationFactor == -1 || clusterNodes.size() == 1) {
             return Collections.unmodifiableSet(clusterNodes);
+        }
+
+        if(replicationFactor == 0) {
+            Object [] arr = this.clusterNodes.toArray();
+            return new HashSet<>(Arrays.asList(arr[random.nextInt(arr.length)].toString()));
+//            return new HashSet<>(Arrays.asList(getSelfId()));
         }
 
         //TODO: For no replication, improve to send data to least loaded nodes than sending to self node

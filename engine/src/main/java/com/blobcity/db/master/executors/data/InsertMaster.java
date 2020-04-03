@@ -17,6 +17,7 @@
 package com.blobcity.db.master.executors.data;
 
 import com.blobcity.db.bsql.BSqlCollectionManager;
+import com.blobcity.db.cluster.connection.ClusterConnection;
 import com.blobcity.db.cluster.nodes.ClusterNodesStore;
 import com.blobcity.db.code.CodeExecutor;
 import com.blobcity.db.exceptions.ErrorCode;
@@ -204,8 +205,15 @@ public class InsertMaster extends ExecuteSelectedNodesCommitMaster implements Ma
 //            });
 //        }
 
+        Set<String> insertToNodes = ClusterNodesStore.getInstance().getLeastLoadedNodes(schema.getReplicationFactor());
+        insertToNodes.forEach(nodeId -> {
+            System.out.println("Will insert in node: " + nodeId);
+            insertStatusHolder.addRecords(nodeId, toInsertList);
+        });
 
-        insertStatusHolder.addRecords(ClusterNodesStore.getInstance().getSelfId(), toInsertList); //this needs to change for smart sharding
+        System.out.println("Replication factor is: " + schema.getReplicationFactor());
+
+//        insertStatusHolder.addRecords(ClusterNodesStore.getInstance().getSelfId(), toInsertList); //this needs to change for smart sharding
         super.query.insertQuery(ds, collection, toInsertList, recordType);
 //        this.acquireSemaphore();
         this.messageAllConcernedNodes(super.query);

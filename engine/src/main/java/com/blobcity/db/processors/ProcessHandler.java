@@ -56,6 +56,7 @@ public class ProcessHandler implements Runnable {
         ProcessorStore processorStore;
         MasterStore masterStore;
 
+        System.out.println("Processing message: " + query.toJsonString());
         switch(query.getQueryType()) {
 
             /* Handle commands coming from master */

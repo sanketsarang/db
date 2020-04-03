@@ -172,6 +172,7 @@ public class ConnectionManager {
         for (int i = 0; i < ClusterConstants.DEFAULT_CONNECTION_POOL; i++) {
             ClusterConnection clusterConnection = new ClusterConnection(socket, selfNodeId, remoteNodeId);
             connectionStore.addConnection(remoteNodeId, clusterConnection);
+            clusterConnection.start();
         }
 
         logger.info("Cluster connection successfully opened to ip " + ipAddress + " on port " + ClusterConstants.CLUSTER_PORT);

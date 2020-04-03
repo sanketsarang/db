@@ -109,6 +109,8 @@ public class RequestHandlingBean {
     private Query processRequest(final Query query) {
         MasterExecutable masterExecutable;
 
+        System.out.println("Process Request: " + query.toJsonString());
+
         try {
             switch (query.getQueryType()) {
 //            case BULK_SELECT:

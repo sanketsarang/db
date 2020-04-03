@@ -23,6 +23,7 @@ import com.blobcity.db.processors.Processor;
 import com.blobcity.db.transaction.CentralCommitLogWriter;
 import com.blobcity.lib.query.Query;
 import com.blobcity.lib.query.QueryParams;
+import org.json.JSONObject;
 
 /**
  * @author sanketsarang
@@ -80,6 +81,8 @@ public class CreateDsProcessor extends AbstractCommitProcessor implements Proces
 
     @Override
     public void commit() {
+        System.out.println("Performing commit operation");
+        System.out.println("Query is: " + query.toJsonString());
         super.transientStore.releaseDsPermit(query.getString(QueryParams.DATASTORE));
 
         Query responseQuery = new Query().requestId(query.getRequestId()).commitSuccessQuery().ack("1");

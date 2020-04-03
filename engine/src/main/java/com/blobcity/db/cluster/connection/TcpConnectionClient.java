@@ -102,6 +102,7 @@ public abstract class TcpConnectionClient extends Thread {
         writer.write(message);
         writer.newLine();
         writer.flush();
+        System.out.println("Flushed message: " + message);
     }
 
     /**

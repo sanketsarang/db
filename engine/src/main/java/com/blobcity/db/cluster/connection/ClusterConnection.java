@@ -22,6 +22,7 @@ import com.blobcity.db.exceptions.OperationException;
 import com.blobcity.db.processors.ProcessHandler;
 import com.blobcity.db.processors.ProcessorExecutorService;
 import com.blobcity.lib.query.Query;
+import com.blobcity.lib.query.QueryParams;
 import com.blobcity.util.json.JsonMessages;
 import java.io.IOException;
 import java.net.Socket;
@@ -89,7 +90,7 @@ public class ClusterConnection extends TcpConnectionClient {
             logger.error("Cluster communication error", ex);
             throw new OperationException(ErrorCode.CLUSTER_CONNECTION_ERROR);
         }
-    }
+     }
 
     /**
      * Method is called when a new message is received from the remote node
@@ -100,7 +101,7 @@ public class ClusterConnection extends TcpConnectionClient {
     protected void processMessage(String message) {
 
         System.out.println("ClusterConnection process message: " + message);
-        ProcessHandler processHandler = new ProcessHandler(remoteNodeId, new Query(new JSONObject(message)));
+        ProcessHandler processHandler = new ProcessHandler(remoteNodeId, new Query(new JSONObject(message).getJSONObject("p")));
         ProcessorExecutorService.getInstance().submit(processHandler);
 
 

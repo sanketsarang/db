@@ -1,0 +1,13 @@
+{
+  "p": {
+    "data": [
+      "{\"col1\": \"1\"}"
+    ],
+    "type": "json"
+  },
+  "q": "INSERT",
+  "c": "test",
+  "rid": "9a0e999d-b220-4847-ab3d-457a92d0d572",
+  "ds": "tes",
+  "mnid": "7f49c8ed-c792-413e-b334-c5f1c5d533a8"
+}
